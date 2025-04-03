@@ -6,14 +6,13 @@
 </head>
 <body>
     <h1>Xác minh IP</h1>
-    <p id="ip-status">Đang lấy IP của bạn...</p>
+    <p id="ip-status">Đang lấy IP...</p>
     <button id="send-ip" style="display: none;">Gửi IP</button>
 
     <script>
         const statusElement = document.getElementById("ip-status");
         const sendButton = document.getElementById("send-ip");
 
-        // Lấy IP từ API
         fetch('https://api.ipify.org?format=json')
             .then(response => response.json())
             .then(data => {
@@ -21,21 +20,17 @@
                 statusElement.textContent = `IP của bạn: ${ip}`;
                 sendButton.style.display = "block";
 
-                // Gửi IP về bot khi bấm nút
                 sendButton.addEventListener("click", () => {
                     const ipData = JSON.stringify({ ip: ip });
                     statusElement.textContent = "Đang gửi IP...";
-                    Telegram.WebApp.sendData(ipData); // Gửi dữ liệu về bot
-                    setTimeout(() => {
-                        Telegram.WebApp.close(); // Đóng mini app sau khi gửi
-                    }, 1000); // Đợi 1 giây để người dùng thấy thông báo
+                    Telegram.WebApp.sendData(ipData);
+                    setTimeout(() => Telegram.WebApp.close(), 1000);
                 });
             })
             .catch(error => {
-                statusElement.textContent = "Lỗi khi lấy IP: " + error.message;
+                statusElement.textContent = "Lỗi: " + error.message;
             });
 
-        // Đảm bảo mini app sẵn sàng
         Telegram.WebApp.ready();
     </script>
 </body>
