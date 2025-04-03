@@ -122,7 +122,6 @@
                         statusElement.classList.remove("ip");
                         statusElement.classList.add("loading");
                         Telegram.WebApp.sendData(ipData); // Gửi dữ liệu về bot
-                        Telegram.WebApp.close(); // Đóng mini app ngay sau khi gửi
                     });
                 })
                 .catch(error => {
