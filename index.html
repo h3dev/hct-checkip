@@ -5,36 +5,77 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             text-align: center;
             padding: 20px;
-            background-color: #f0f0f0;
+            background: linear-gradient(135deg, #74ebd5, #acb6e5);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
         }
         h1 {
-            color: #333;
+            color: #2c3e50;
+            font-size: 28px;
+            margin-bottom: 20px;
         }
         p {
             font-size: 18px;
-            margin: 20px 0;
+            color: #34495e;
+            margin: 15px 0;
+            line-height: 1.5;
         }
         button {
-            padding: 10px 20px;
+            padding: 12px 25px;
             font-size: 16px;
-            background-color: #0088cc;
+            font-weight: bold;
+            background: linear-gradient(90deg, #1e90ff, #00b4db);
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.3s;
         }
         button:hover {
-            background-color: #005f99;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .loading {
+            color: #7f8c8d;
+            font-style: italic;
+        }
+        .error {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .ip {
+            color: #27ae60;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <h1>Xác minh IP</h1>
-    <p id="ip-status">Đang lấy IP...</p>
-    <button id="send-ip" style="display: none;">Gửi IP</button>
+    <div class="container">
+        <h1>Xác minh IP</h1>
+        <p id="ip-status" class="loading">Đang lấy IP...</p>
+        <button id="send-ip" disabled>Gửi IP</button>
+    </div>
 
     <script>
         const statusElement = document.getElementById("ip-status");
@@ -46,64 +87,41 @@
             Telegram.WebApp.expand();
         } else {
             statusElement.textContent = "Lỗi: Không thể khởi tạo Telegram Web App.";
+            statusElement.classList.remove("loading");
+            statusElement.classList.add("error");
+            sendButton.disabled = true;
             return;
         }
 
-        // Hàm thử lấy IP từ nhiều API
-        async function fetchIP() {
-            const apis = [
-                'https://api.ipify.org?format=json',
-                'https://ipapi.co/json/',
-                'https://api.myip.com'
-            ];
-
-            for (const api of apis) {
-                try {
-                    const response = await fetch(api, { method: 'GET', mode: 'cors' });
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                    const data = await response.json();
-                    const ip = data.ip || data.query; // ipapi.co dùng "ip", myip.com dùng "ip", ipify dùng "ip"
-                    if (ip) return ip;
-                } catch (error) {
-                    console.error(`Lỗi khi lấy IP từ ${api}:`, error);
-                    continue;
-                }
-            }
-            throw new Error("Không thể lấy IP từ bất kỳ API nào.");
-        }
-
-        // Lấy IP và hiển thị trên màn hình
-        fetchIP()
-            .then(ip => {
+        // Lấy IP từ API
+        fetch('https://api.ipify.org?format=json')
+            .then(response => response.json())
+            .then(data => {
+                const ip = data.ip;
                 statusElement.textContent = `IP của bạn: ${ip}`; // Hiển thị IP trên màn hình
-                sendButton.style.display = "block";
+                statusElement.classList.remove("loading");
+                statusElement.classList.add("ip");
+                sendButton.disabled = false; // Kích hoạt nút Gửi IP
 
                 // Gửi IP về bot khi bấm nút
                 sendButton.addEventListener("click", () => {
                     const ipData = JSON.stringify({ ip: ip });
                     statusElement.textContent = `IP của bạn: ${ip}\nĐang gửi IP...`; // Cập nhật trạng thái khi gửi
-                    try {
-                        Telegram.WebApp.sendData(ipData);
-                        setTimeout(() => {
-                            Telegram.WebApp.close();
-                        }, 1000);
-                    } catch (error) {
-                        statusElement.textContent = `IP của bạn: ${ip}\nLỗi khi gửi IP: ${error.message}`;
-                    }
+                    statusElement.classList.remove("ip");
+                    statusElement.classList.add("loading");
+                    Telegram.WebApp.sendData(ipData); // Gửi dữ liệu về bot
+                    Telegram.WebApp.close(); // Đóng mini app ngay sau khi gửi
                 });
             })
             .catch(error => {
-                statusElement.textContent = `Lỗi khi lấy IP: ${error.message}`; // Hiển thị lỗi trên màn hình
+                statusElement.textContent = "Lỗi khi lấy IP: " + error.message; // Hiển thị lỗi trên màn hình
+                statusElement.classList.remove("loading");
+                statusElement.classList.add("error");
+                sendButton.disabled = true; // Vô hiệu hóa nút nếu có lỗi
                 // Gửi thông báo lỗi về bot
                 const errorData = JSON.stringify({ error: "Không thể lấy IP: " + error.message });
-                try {
-                    Telegram.WebApp.sendData(errorData);
-                    setTimeout(() => {
-                        Telegram.WebApp.close();
-                    }, 1000);
-                } catch (sendError) {
-                    statusElement.textContent = `Lỗi khi lấy IP: ${error.message}\nLỗi khi gửi thông báo lỗi: ${sendError.message}`;
-                }
+                Telegram.WebApp.sendData(errorData);
+                Telegram.WebApp.close();
             });
     </script>
 </body>
