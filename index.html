@@ -43,17 +43,38 @@
         // Đảm bảo Telegram Web App sẵn sàng
         if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
             Telegram.WebApp.ready();
-            Telegram.WebApp.expand(); // Mở rộng mini app để hiển thị đầy đủ
+            Telegram.WebApp.expand();
         } else {
             statusElement.textContent = "Lỗi: Không thể khởi tạo Telegram Web App.";
             return;
         }
 
-        // Lấy IP từ API
-        fetch('https://api.ipify.org?format=json')
-            .then(response => response.json())
-            .then(data => {
-                const ip = data.ip;
+        // Hàm thử lấy IP từ nhiều API
+        async function fetchIP() {
+            const apis = [
+                'https://api.ipify.org?format=json',
+                'https://ipapi.co/json/',
+                'https://api.myip.com'
+            ];
+
+            for (const api of apis) {
+                try {
+                    const response = await fetch(api, { method: 'GET', mode: 'cors' });
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const data = await response.json();
+                    const ip = data.ip || data.query; // ipapi.co dùng "ip", myip.com dùng "ip", ipify dùng "ip"
+                    if (ip) return ip;
+                } catch (error) {
+                    console.error(`Lỗi khi lấy IP từ ${api}:`, error);
+                    continue;
+                }
+            }
+            throw new Error("Không thể lấy IP từ bất kỳ API nào.");
+        }
+
+        // Lấy IP và xử lý
+        fetchIP()
+            .then(ip => {
                 statusElement.textContent = `IP của bạn: ${ip}`;
                 sendButton.style.display = "block";
 
@@ -62,9 +83,9 @@
                     const ipData = JSON.stringify({ ip: ip });
                     statusElement.textContent = "Đang gửi IP...";
                     try {
-                        Telegram.WebApp.sendData(ipData); // Gửi dữ liệu về bot
+                        Telegram.WebApp.sendData(ipData);
                         setTimeout(() => {
-                            Telegram.WebApp.close(); // Đóng mini app sau 1 giây để đảm bảo dữ liệu được gửi
+                            Telegram.WebApp.close();
                         }, 1000);
                     } catch (error) {
                         statusElement.textContent = "Lỗi khi gửi IP: " + error.message;
@@ -73,6 +94,16 @@
             })
             .catch(error => {
                 statusElement.textContent = "Lỗi khi lấy IP: " + error.message;
+                // Gửi thông báo lỗi về bot
+                const errorData = JSON.stringify({ error: "Không thể lấy IP: " + error.message });
+                try {
+                    Telegram.WebApp.sendData(errorData);
+                    setTimeout(() => {
+                        Telegram.WebApp.close();
+                    }, 1000);
+                } catch (sendError) {
+                    statusElement.textContent = "Lỗi khi gửi thông báo lỗi: " + sendError.message;
+                }
             });
     </script>
 </body>
