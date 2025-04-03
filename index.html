@@ -93,31 +93,11 @@
             return;
         }
 
-        // Hàm thử lấy IP từ nhiều API
-        async function fetchIP() {
-            const apis = [
-                'https://api.ipify.org?format=json',
-                'https://api.myip.com'
-            ];
-
-            for (const api of apis) {
-                try {
-                    const response = await fetch(api, { method: 'GET', mode: 'cors' });
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                    const data = await response.json();
-                    const ip = data.ip || data.query; // ipify dùng "ip", myip.com dùng "ip"
-                    if (ip) return ip;
-                } catch (error) {
-                    console.error(`Lỗi khi lấy IP từ ${api}:`, error);
-                    continue;
-                }
-            }
-            throw new Error("Không thể lấy IP từ bất kỳ API nào.");
-        }
-
-        // Lấy IP và hiển thị trên màn hình
-        fetchIP()
-            .then(ip => {
+        // Lấy IP từ API
+        fetch('https://api.ipify.org?format=json')
+            .then(response => response.json())
+            .then(data => {
+                const ip = data.ip;
                 statusElement.textContent = `IP của bạn: ${ip}`; // Hiển thị IP trên màn hình
                 statusElement.classList.remove("loading");
                 statusElement.classList.add("ip");
