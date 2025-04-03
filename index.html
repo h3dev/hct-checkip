@@ -13,6 +13,10 @@
         const statusElement = document.getElementById("ip-status");
         const sendButton = document.getElementById("send-ip");
 
+        // Đảm bảo Telegram Web App sẵn sàng
+        Telegram.WebApp.ready();
+
+        // Lấy IP từ API
         fetch('https://api.ipify.org?format=json')
             .then(response => response.json())
             .then(data => {
@@ -20,18 +24,17 @@
                 statusElement.textContent = `IP của bạn: ${ip}`;
                 sendButton.style.display = "block";
 
+                // Gửi IP về bot khi bấm nút
                 sendButton.addEventListener("click", () => {
                     const ipData = JSON.stringify({ ip: ip });
                     statusElement.textContent = "Đang gửi IP...";
-                    Telegram.WebApp.sendData(ipData);
-                    setTimeout(() => Telegram.WebApp.close(), 1000);
+                    Telegram.WebApp.sendData(ipData); // Gửi dữ liệu về bot
+                    Telegram.WebApp.close(); // Đóng mini app ngay sau khi gửi
                 });
             })
             .catch(error => {
-                statusElement.textContent = "Lỗi: " + error.message;
+                statusElement.textContent = "Lỗi khi lấy IP: " + error.message;
             });
-
-        Telegram.WebApp.ready();
     </script>
 </body>
 </html>
