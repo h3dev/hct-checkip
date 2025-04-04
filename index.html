@@ -95,17 +95,26 @@
             // Lấy initData và log chi tiết
             const initData = Telegram.WebApp.initDataUnsafe;
             console.log("initDataUnsafe (chi tiết):", JSON.stringify(initData, null, 2));
-
+            
             // Kiểm tra user và user.id
             if (!initData || !initData.user || !initData.user.id) {
-                const errorMessage = "Không thể lấy thông tin người dùng. Vui lòng cập nhật Telegram hoặc liên hệ admin.";
+                const errorMessage = "Không thể lấy thông tin người dùng. Vui lòng thử lại hoặc liên hệ admin.";
                 console.error(errorMessage, "initDataUnsafe:", JSON.stringify(initData, null, 2));
                 statusElement.textContent = errorMessage;
                 statusElement.classList.remove("loading");
                 statusElement.classList.add("error");
                 sendButton.disabled = true;
-
-                // Gửi thông báo lỗi về bot
+            
+                // Thêm nút "Thử lại"
+                const retryButton = document.createElement("button");
+                retryButton.textContent = "Thử lại";
+                retryButton.style.marginTop = "10px";
+                retryButton.addEventListener("click", () => {
+                    location.reload(); // Tải lại Mini App để thử lại
+                });
+                document.querySelector(".container").appendChild(retryButton);
+            
+                // Gửi thông báo lỗi về bot nhưng không đóng Mini App ngay
                 const errorData = JSON.stringify({ 
                     error: "Không thể lấy thông tin người dùng. initDataUnsafe: " + JSON.stringify(initData),
                     platform: Telegram.WebApp.platform,
@@ -113,7 +122,7 @@
                 });
                 console.log("Gửi lỗi về bot:", errorData);
                 Telegram.WebApp.sendData(errorData);
-                Telegram.WebApp.close();
+                // Xóa dòng Telegram.WebApp.close() để không đóng ngay
             } else {
                 userId = initData.user.id;
                 console.log("User ID:", userId);
