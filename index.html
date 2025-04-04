@@ -98,19 +98,17 @@
                 statusElement.classList.remove("loading");
                 statusElement.classList.add("error");
                 sendButton.disabled = true;
-                return;
+            } else {
+                userId = initData.user.id;
+                console.log("User ID:", userId);
+                statusElement.textContent = `Đã lấy thông tin người dùng. User ID: ${userId}`;
             }
-
-            userId = initData.user.id;
-            console.log("User ID:", userId);
-            statusElement.textContent = `Đã lấy thông tin người dùng. User ID: ${userId}`;
         } else {
             console.error("Không thể khởi tạo Telegram Web App.");
             statusElement.textContent = "Lỗi: Không thể khởi tạo Telegram Web App.";
             statusElement.classList.remove("loading");
             statusElement.classList.add("error");
             sendButton.disabled = true;
-            return;
         }
 
         // Chỉ tiếp tục nếu userId hợp lệ
