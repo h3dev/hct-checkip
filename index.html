@@ -81,33 +81,20 @@
         const statusElement = document.getElementById("ip-status");
         const sendButton = document.getElementById("send-ip");
 
-        // Đảm bảo Telegram Web App sẵn sàng
+        // Khởi tạo Telegram Web App (không kiểm tra initDataUnsafe)
         if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
             Telegram.WebApp.ready();
             Telegram.WebApp.expand();
 
-            // Log thông tin môi trường
+            // Log thông tin môi trường (chỉ để debug)
             console.log("Phiên bản Telegram Web App:", Telegram.WebApp.version);
             console.log("Nền tảng:", Telegram.WebApp.platform);
             console.log("Thông tin chủ đề:", JSON.stringify(Telegram.WebApp.themeParams, null, 2));
             console.log("initData (raw):", Telegram.WebApp.initData);
             console.log("initDataUnsafe (chi tiết):", JSON.stringify(Telegram.WebApp.initDataUnsafe, null, 2));
         } else {
-            const errorMessage = "Không thể khởi tạo Telegram Web App. Vui lòng cập nhật Telegram hoặc liên hệ admin.";
-            console.error(errorMessage);
-            statusElement.textContent = errorMessage;
-            statusElement.classList.remove("loading");
-            statusElement.classList.add("error");
-            sendButton.disabled = true;
-
-            // Thêm nút "Thử lại"
-            const retryButton = document.createElement("button");
-            retryButton.textContent = "Thử lại";
-            retryButton.style.marginTop = "10px";
-            retryButton.addEventListener("click", () => {
-                location.reload(); // Tải lại Mini App để thử lại
-            });
-            document.querySelector(".container").appendChild(retryButton);
+            console.error("Không thể khởi tạo Telegram Web App.");
+            // Vẫn tiếp tục lấy IP, không dừng lại
         }
 
         // Lấy IP từ API
