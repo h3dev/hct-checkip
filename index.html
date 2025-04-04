@@ -82,7 +82,6 @@
         const sendButton = document.getElementById("send-ip");
 
         // Đảm bảo Telegram Web App sẵn sàng
-        let userId = null;
         if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
             Telegram.WebApp.ready();
             Telegram.WebApp.expand();
@@ -91,43 +90,8 @@
             console.log("Phiên bản Telegram Web App:", Telegram.WebApp.version);
             console.log("Nền tảng:", Telegram.WebApp.platform);
             console.log("Thông tin chủ đề:", JSON.stringify(Telegram.WebApp.themeParams, null, 2));
-
-            // Lấy initData và log chi tiết
-            const initData = Telegram.WebApp.initDataUnsafe;
-            console.log("initDataUnsafe (chi tiết):", JSON.stringify(initData, null, 2));
-            
-            // Kiểm tra user và user.id
-            if (!initData || !initData.user || !initData.user.id) {
-                const errorMessage = "Không thể lấy thông tin người dùng. Vui lòng thử lại hoặc liên hệ admin.";
-                console.error(errorMessage, "initDataUnsafe:", JSON.stringify(initData, null, 2));
-                statusElement.textContent = errorMessage;
-                statusElement.classList.remove("loading");
-                statusElement.classList.add("error");
-                sendButton.disabled = true;
-            
-                // Thêm nút "Thử lại"
-                const retryButton = document.createElement("button");
-                retryButton.textContent = "Thử lại";
-                retryButton.style.marginTop = "10px";
-                retryButton.addEventListener("click", () => {
-                    location.reload(); // Tải lại Mini App để thử lại
-                });
-                document.querySelector(".container").appendChild(retryButton);
-            
-                // Gửi thông báo lỗi về bot nhưng không đóng Mini App ngay
-                const errorData = JSON.stringify({ 
-                    error: "Không thể lấy thông tin người dùng. initDataUnsafe: " + JSON.stringify(initData),
-                    platform: Telegram.WebApp.platform,
-                    version: Telegram.WebApp.version
-                });
-                console.log("Gửi lỗi về bot:", errorData);
-                Telegram.WebApp.sendData(errorData);
-                // Xóa dòng Telegram.WebApp.close() để không đóng ngay
-            } else {
-                userId = initData.user.id;
-                console.log("User ID:", userId);
-                statusElement.textContent = `Đã lấy thông tin người dùng. User ID: ${userId}`;
-            }
+            console.log("initData (raw):", Telegram.WebApp.initData);
+            console.log("initDataUnsafe (chi tiết):", JSON.stringify(Telegram.WebApp.initDataUnsafe, null, 2));
         } else {
             const errorMessage = "Không thể khởi tạo Telegram Web App. Vui lòng cập nhật Telegram hoặc liên hệ admin.";
             console.error(errorMessage);
@@ -136,49 +100,53 @@
             statusElement.classList.add("error");
             sendButton.disabled = true;
 
-            // Gửi thông báo lỗi về bot
-            const errorData = JSON.stringify({ error: "Không thể khởi tạo Telegram Web App." });
-            console.log("Gửi lỗi về bot:", errorData);
-            Telegram.WebApp.sendData(errorData);
-            Telegram.WebApp.close();
+            // Thêm nút "Thử lại"
+            const retryButton = document.createElement("button");
+            retryButton.textContent = "Thử lại";
+            retryButton.style.marginTop = "10px";
+            retryButton.addEventListener("click", () => {
+                location.reload(); // Tải lại Mini App để thử lại
+            });
+            document.querySelector(".container").appendChild(retryButton);
         }
 
-        // Chỉ tiếp tục nếu userId hợp lệ
-        if (userId) {
-            // Lấy IP từ API
-            fetch('https://api.ipify.org?format=json')
-                .then(response => response.json())
-                .then(data => {
-                    const ip = data.ip;
-                    statusElement.textContent = `IP của bạn: ${ip}`; // Hiển thị IP trên màn hình
-                    statusElement.classList.remove("loading");
-                    statusElement.classList.add("ip");
-                    sendButton.disabled = false; // Kích hoạt nút Gửi IP
+        // Lấy IP từ API
+        fetch('https://api.ipify.org?format=json')
+            .then(response => response.json())
+            .then(data => {
+                const ip = data.ip;
+                statusElement.textContent = `IP của bạn: ${ip}`; // Hiển thị IP trên màn hình
+                statusElement.classList.remove("loading");
+                statusElement.classList.add("ip");
+                sendButton.disabled = false; // Kích hoạt nút Gửi IP
 
-                    // Gửi IP và user_id về bot khi bấm nút
-                    sendButton.addEventListener("click", () => {
-                        const ipData = JSON.stringify({ user_id: userId, ip: ip });
-                        console.log("Gửi dữ liệu:", ipData);
-                        statusElement.textContent = `IP của bạn: ${ip}\nĐang gửi IP...`; // Cập nhật trạng thái khi gửi
-                        statusElement.classList.remove("ip");
-                        statusElement.classList.add("loading");
-                        Telegram.WebApp.sendData(ipData); // Gửi dữ liệu về bot
-                        Telegram.WebApp.close(); // Đóng Mini App sau khi gửi
-                    });
-                })
-                .catch(error => {
-                    console.error("Lỗi khi lấy IP:", error);
-                    statusElement.textContent = "Lỗi khi lấy IP: " + error.message; // Hiển thị lỗi trên màn hình
-                    statusElement.classList.remove("loading");
-                    statusElement.classList.add("error");
-                    sendButton.disabled = true; // Vô hiệu hóa nút nếu có lỗi
-                    // Gửi thông báo lỗi về bot
-                    const errorData = JSON.stringify({ user_id: userId, error: "Không thể lấy IP: " + error.message });
-                    console.log("Gửi lỗi:", errorData);
-                    Telegram.WebApp.sendData(errorData);
-                    Telegram.WebApp.close();
+                // Gửi IP về bot khi bấm nút
+                sendButton.addEventListener("click", () => {
+                    const ipData = JSON.stringify({ ip: ip });
+                    console.log("Gửi dữ liệu:", ipData);
+                    statusElement.textContent = `IP của bạn: ${ip}\nĐang gửi IP...`; // Cập nhật trạng thái khi gửi
+                    statusElement.classList.remove("ip");
+                    statusElement.classList.add("loading");
+                    Telegram.WebApp.sendData(ipData); // Gửi dữ liệu về bot
+                    Telegram.WebApp.close(); // Đóng Mini App sau khi gửi
                 });
-        }
+            })
+            .catch(error => {
+                console.error("Lỗi khi lấy IP:", error);
+                statusElement.textContent = "Lỗi khi lấy IP: " + error.message; // Hiển thị lỗi trên màn hình
+                statusElement.classList.remove("loading");
+                statusElement.classList.add("error");
+                sendButton.disabled = true; // Vô hiệu hóa nút nếu có lỗi
+
+                // Thêm nút "Thử lại"
+                const retryButton = document.createElement("button");
+                retryButton.textContent = "Thử lại";
+                retryButton.style.marginTop = "10px";
+                retryButton.addEventListener("click", () => {
+                    location.reload(); // Tải lại Mini App để thử lại
+                });
+                document.querySelector(".container").appendChild(retryButton);
+            });
     </script>
 </body>
 </html>
