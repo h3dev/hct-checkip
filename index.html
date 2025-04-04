@@ -87,6 +87,11 @@
             Telegram.WebApp.ready();
             Telegram.WebApp.expand();
 
+            // Log thông tin môi trường
+            console.log("Phiên bản Telegram Web App:", Telegram.WebApp.version);
+            console.log("Nền tảng:", Telegram.WebApp.platform);
+            console.log("Thông tin chủ đề:", JSON.stringify(Telegram.WebApp.themeParams, null, 2));
+
             // Lấy initData và log chi tiết
             const initData = Telegram.WebApp.initDataUnsafe;
             console.log("initDataUnsafe (chi tiết):", JSON.stringify(initData, null, 2));
@@ -101,7 +106,11 @@
                 sendButton.disabled = true;
 
                 // Gửi thông báo lỗi về bot
-                const errorData = JSON.stringify({ error: "Không thể lấy thông tin người dùng. initDataUnsafe: " + JSON.stringify(initData) });
+                const errorData = JSON.stringify({ 
+                    error: "Không thể lấy thông tin người dùng. initDataUnsafe: " + JSON.stringify(initData),
+                    platform: Telegram.WebApp.platform,
+                    version: Telegram.WebApp.version
+                });
                 console.log("Gửi lỗi về bot:", errorData);
                 Telegram.WebApp.sendData(errorData);
                 Telegram.WebApp.close();
